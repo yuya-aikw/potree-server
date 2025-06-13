@@ -19,20 +19,6 @@
     ...
 ~~~
 
-# Edit nginx config
-- `nginx/default.conf`を編集
-~~~nginx/default.conf
-...
-
-# htmls of your data 
-location /hoge/ {
-     alias /usr/share/nginx/<your project name>/;
-     # index index.html;
-     autoindex on;
-}
-
-...
-~~~
 # How to use
 ~~~
 git clone git@github.com:yuyaa199908/potree-server.git
@@ -44,8 +30,8 @@ docker build -t potree-server .
 docker run --name <your container name> -d\
  -p <your host ip>:80\
  -v "$(pwd)/nginx/default.conf":/etc/nginx/conf.d/default.conf\
- -v <path to your project>:/usr/share/nginx/<your project name>\
+ -v <path to your project>:/usr/share/nginx/potree/<your project name>\
  potree-server
 ~~~ 
-- Potree examples: http://`your host ip address`:`your host ip`/examples/
-- Your project: http://`your host ip address`:`your host ip`/`your project name`/
+- Potree examples: http://`your host ip address`:`your host ip`/potree/examples/
+- Your project: http://`your host ip address`:`your host ip`/potree/`your project name`/
