@@ -47,5 +47,5 @@ docker run --name <your container name> -d\
  -v <path to your project>:/usr/share/nginx/<your project name>\
  potree-server
 ~~~ 
-- Potree examples: http://<your host ip address>:<your host ip>/examples/
-- Your project: http://<your host ip address>:<your host ip>/<your project name>/
+- Potree examples: http://`your host ip address`:`your host ip`/examples/
+- Your project: http://`your host ip address`:`your host ip`/`your project name`/
