@@ -12,10 +12,10 @@ RUN npm install
 FROM nginx:alpine
 
 # copy Potree files from the builder stage
-# COPY --from=builder /potree /usr/share/nginx/potree
+COPY --from=builder /potree /usr/share/nginx/potree
 
 # copy Nginx configuration
-COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
+# COPY ./nginx/default.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
