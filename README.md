@@ -35,3 +35,9 @@ docker run --name <your container name> -d\
 ~~~ 
 - Potree examples: http://`your host ip address`:`your host ip`/potree/examples/
 - Your project: http://`your host ip address`:`your host ip`/potree/`your project name`/
+# TODO
+- ディレクトリ構造の配置
+- index.htmlの作成
+    - 名前, 日付, センサ名の管理
+    - サムネの表示
+
