@@ -42,11 +42,20 @@
     
             window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
             
-            viewer.setEDLEnabled(false);
+            viewer.setEDLEnabled(true);
             viewer.setFOV(60);
-            viewer.setPointBudget(1_000_000);
+            viewer.setPointBudget(5_000_000);
             viewer.loadSettingsFromURL();
             viewer.setBackground("skybox");
+
+            viewer.setPointBudget(5_000_000);
+            viewer.setFOV(60);
+            viewer.setEDLEnabled(true);
+            viewer.setEDLRadius(1.0);
+            viewer.setEDLStrength(0.0);
+            viewer.setBackground("skybox");
+            viewer.setMinNodeSize(0);
+            viewer.setShowBoundingBox(false);
             
             // fix description
             viewer.setDescription("NAME, DATE, DEVICE");
