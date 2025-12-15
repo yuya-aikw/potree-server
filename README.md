@@ -5,23 +5,34 @@
 - `template.html`をコピー&編集して`<your potree data>.html`を作成
 - 配置例
 ~~~
-<path to your project>
-├── <your potree data 1>.html
-├── <your potree data 2>.html
+<path to html page dir>
+├──project_A
+│   └── page.html
+├──project_B
+│   ├── page_1.html
+│   ...
+│   └── page_n.html
 ...
-└── pointclouds
-    ├── <your potree data 1>
-    │   ├── hierarchy.bin
-    │   ├── log.txt
-    │   ├── metadata.json
-    │   └── octree.bin
-    ├── <your potree data 2>
-    ...
+~~~
+~~~
+<path to pointcloud data dir>
+├──project_A
+│   └── page
+│       ├── hierarchy.bin
+│       ├── log.txt
+│       ├── metadata.json
+│       └── octree.bin
+├──project_B
+│   ├── page_1
+│   ...
+│   └── page_n
+...
 ~~~
 
 # How to use
+- create users and passwords for basic authentication `openssl passwd -apr1`
 ~~~
-git clone git@github.com:yuyaa199908/potree-server.git
+git clone git@github.com:yuya-aikw/potree-server.git
 
 cd potree-server
 
@@ -29,16 +40,13 @@ docker build -t potree-server .
 
 docker run --name <your container name> -d\
  -p <your host ip>:80\
+ -v "$(pwd)/.htpasswd":/etc/nginx/.htpasswd:ro\
  -v "$(pwd)/nginx/default.conf":/etc/nginx/conf.d/default.conf\
- -v <path to your project>:/usr/share/nginx/potree/<your project name>\
+ -v <path to html page dir      >:/usr/share/nginx/potree/_page\
+ -v <path to pointcloud data dir>:/usr/share/nginx/potree/_dir\
  potree-server
 ~~~ 
-- Potree examples: http://`your host ip address`:`your host ip`/potree/examples/
-- Your project: http://`your host ip address`:`your host ip`/potree/`your project name`/
+- access to `http://<your host ip address>:<your host ip>/potree/_page/`
 
 # TODO
-- ディレクトリ構造の配置
-- index.htmlの作成
-    - 名前, 日付, センサ名の管理
-    - サムネの表示
 
