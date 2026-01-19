@@ -52,7 +52,7 @@ docker run --name <your container name> -d\
  -v $(pwd)/nginx/server.key:/etc/nginx/conf.d/server.key:ro \
  -v $(pwd)/.htpasswd:/etc/nginx/.htpasswd:ro \
  -v <path to html page dir      >:/usr/share/nginx/potree/_page:ro\
- -v <path to pointcloud data dir>:/usr/share/nginx/potree/_dir:ro \
+ -v <path to pointcloud data dir>:/usr/share/nginx/potree/_data:ro \
  potree-server
 ~~~ 
 - access to `http://<your host ip address>:<your host ip>/potree/_page/`

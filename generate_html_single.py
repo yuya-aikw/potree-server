@@ -1,4 +1,31 @@
+#!/usr/bin/env python3
+"""
+Potree Viewer HTMLファイルを動的に生成するスクリプト
+"""
+
+import os
+from pathlib import Path
+from typing import List
+
+
+def generate_html(
+    local_page_path: str,
+    description: str,
+    data_path: str,
+) -> None:
+    """
+    Potree Viewer HTMLファイルを生成する
+    
+    Args:
+        local_page_path: 出力HTMLファイルのパス
+        description: ビューワーの説明文（viewer.setDescription()に使用）
+        data_path: データのパス（例: "/potree/_data/tmp"）
+    """
+    data_path = data_path.rstrip("/")
+
+    html_content = f'''
 <!-- copyed from https://github.com/potree/potree/blob/develop/examples/viewer.html -->
+<!-- changed ../ to /potree/ -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -44,56 +71,66 @@
 
         window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
 
-        viewer.loadSettingsFromURL();
-        viewer.setPointBudget(5_000_000);
+        viewer.setEDLEnabled(false);
         viewer.setFOV(60);
-        viewer.setEDLEnabled(true);
-        viewer.setEDLRadius(1.0);
-        viewer.setEDLStrength(0.0);
+        viewer.setPointBudget(1_000_000);
+        viewer.loadSettingsFromURL();
         viewer.setBackground("skybox");
-        viewer.setMinNodeSize(0);
-        viewer.setShowBoundingBox(false);
 
         // fix description
-        viewer.setDescription("NAME, DATE, DEVICE");
+        viewer.setDescription("{description}");
 
-        // fix GUI 
-        viewer.loadGUI(() => {
-            viewer.setLanguage('en');
+        viewer.loadGUI(() => {{
+            viewer.setLanguage('jp');
             $("#menu_tools").next().show();
+            $("#menu_appearance").next().show();
             $("#menu_clipping").next().show();
             viewer.toggleSidebar();
-        });
+        }});
 
-        // fix classfication scheme
-        viewer.setClassifications({
-            0: { visible: true, name: 'never classified', color: [0.5, 0.5, 0.5, 1.0] },
-            1: { visible: true, name: 'hoge 1', color: [1.0, 0.0, 0.0, 0.5] },
-            DEFAULT: { visible: false, name: 'default', color: [0.0, 0.0, 0.0, 1.0] },
-        });
+        // カスタムスキームに変更
+        viewer.setClassifications({{
+            0: {{ visible: true, name: 'never classified', color: [0.5, 0.5, 0.5, 1.0] }},
+            1: {{ visible: true, name: 'hoge 1', color: [1.0, 0.0, 0.0, 0.5] }},
+            DEFAULT: {{ visible: false, name: 'default', color: [0.0, 0.0, 0.0, 1.0] }},
+        }});
 
         // fix metadata.json url
-        let url_1 = "path to metadata 1.json";
-        Potree.loadPointCloud(url_1, "1", e => {
+        Potree.loadPointCloud("{data_path}/metadata.json", "0", e => {{
             let pointcloud = e.pointcloud;
             let material = pointcloud.material;
+
             material.activeAttributeName = "rgba";
             material.minSize = 1;
             material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+
             viewer.scene.addPointCloud(pointcloud);
             viewer.fitToScreen();
-        });
-        let url_2 = "path to metadata 2.json";
-        Potree.loadPointCloud(url_2, "2", e => {
-            let pointcloud = e.pointcloud;
-            let material = pointcloud.material;
-            material.activeAttributeName = "rgba";
-            material.minSize = 1;
-            material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-            viewer.scene.addPointCloud(pointcloud);
-            viewer.fitToScreen();
-        });
+        }});
     </script>
 </body>
-
 </html>
+'''
+
+    # 出力ディレクトリが存在しない場合は作成
+    output_dir = Path(local_page_path).parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # HTMLファイルを書き込み
+    with open(local_page_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    print(f"Generated: {local_page_path}")
+
+# 使用例
+if __name__ == "__main__":
+    local_page_path = "<path to html page dir>/hoge.html"
+    description = "NAME, DATE, DEVICE"
+    data_path = "/potree/_data/hoge"
+    
+    generate_html(
+        local_page_path=local_page_path ,
+        description=description,
+        data_path=data_path
+    )
+    print("\nDone!")
