@@ -1,0 +1,49 @@
+<script type="module">
+import {OBJLoader} from "../libs/three.js/loaders/OBJLoader.js";
+
+let loader = new OBJLoader();
+loader.load(`${Potree.resourcePath}/models/stanford_bunny_reduced.obj`, function (object) {
+    object.traverse(function (child) {
+        if (child instanceof THREE.Mesh) {
+            child.material.map = texture; // テクスチャを適用
+        }
+    });
+    
+    object.position.set(589871.587, 231528.213, 725.634);
+    object.scale.multiplyScalar(500);
+    object.rotation.set(Math.PI / 2, Math.PI, 0);
+    
+    viewer.scene.scene.add(object);
+});
+</script>
+
+<!-- viewer.onGUILoaded(() => {
+    let tree = $(`#jstree_scene`);
+    let parentNode = "other";
+    
+    let meshID = tree.jstree('create_node', parentNode, { 
+        "text": "My Mesh", 
+        "icon": `${Potree.resourcePath}/icons/triangle.svg`,
+        "data": mesh
+    }, "last", false, false);
+    
+    tree.jstree(mesh.visible ?  "check_node" : "uncheck_node", meshID);
+}); -->
+
+<!-- // 1. ノーマルマテリアル
+let material1 = new THREE.MeshNormalMaterial();
+
+// 2. スタンダードマテリアル
+let material2 = new THREE.MeshStandardMaterial({ 
+    color: 0x0055ff, 
+    flatShading: true,
+    metalness: 0.2
+});
+
+// 3. 物理ベースマテリアル
+let material3 = new THREE. MeshPhysicalMaterial({
+    color: 0x226666,
+    metalness: 0,
+    roughness: 0.5,
+    reflectivity: 1.0
+}); -->

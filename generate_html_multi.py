@@ -3,8 +3,10 @@
 Potree Viewer HTMLファイルを動的に生成するスクリプト
 """
 
+from operator import index
 import os
 from pathlib import Path
+from turtle import position
 from typing import List
 
 
@@ -12,7 +14,8 @@ def generate_html(
     local_page_path: str,
     description: str,
     data_base_dir: str,
-    data_subdirs: List[str]
+    data_subdirs: List[str],
+    page_link_dir: str,
 ) -> None:
     """
     Potree Viewer HTMLファイルを生成する
@@ -71,18 +74,13 @@ def generate_html(
     </div>
 
     <script type="module">
-
+        // create viewer
         window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
-
         viewer.setEDLEnabled(false);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
         viewer.loadSettingsFromURL();
         viewer.setBackground("skybox");
-
-        // fix description
-        viewer.setDescription("{description}");
-
         viewer.loadGUI(() => {{
             viewer.setLanguage('jp');
             $("#menu_tools").next().show();
@@ -90,39 +88,59 @@ def generate_html(
             $("#menu_clipping").next().show();
             viewer.toggleSidebar();
         }});
+        viewer.setDescription("{description}");
 
-        // カスタムスキームに変更
-        viewer.setClassifications({{
-            0: {{ visible: true, name: 'never classified', color: [0.5, 0.5, 0.5, 1.0] }},
-            1: {{ visible: true, name: 'hoge 1', color: [1.0, 0.0, 0.0, 0.5] }},
-            DEFAULT: {{ visible: false, name: 'default', color: [0.0, 0.0, 0.0, 1.0] }},
-        }});
+        // classification
+        let classifications = {{}};
+        for (let i = 64; i < 256; i++) {{
+            classifications[i] = {{
+                visible: true,
+                name: String(i),
+                color: [Math.random(),Math.random(),Math.random(),1.0], 
+            }};
+        }}
+        classifications.DEFAULT = {{visible: false,name: 'default',color: [1.0, 1.0, 1.0, 1.0]}};
+        viewer.setClassifications(classifications);
 
-        // fix metadata.json url
-        // 走査したいベースディレクトリとサブディレクトリのリスト
+        // add point clouds and annotations
         let baseDir = "{data_base_dir}";
-        let subdirs = [
-            {data_subdirs_js}
-        ];
-        
-        // URLリストを生成
+        let subdirs = [{data_subdirs_js}];        
         let urls = subdirs.map(dir => `${{baseDir}}/${{dir}}/metadata.json`);
-        
         urls.forEach((url, index) => {{
-            Potree.loadPointCloud(url, `${{index}}`, e => {{
+            Potree.loadPointCloud(url, subdirs[index], e => {{
+                // add point cloud
                 let pointcloud = e.pointcloud;
                 let material = pointcloud.material;
-
                 material.activeAttributeName = "rgba";
                 material.minSize = 1;
                 material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-
                 viewer.scene.addPointCloud(pointcloud);
-                
-                // 最初のポイントクラウドでカメラを調整
                 if (index === 0) {{
                     viewer.fitToScreen();
                 }}
+                
+                // add annotation
+                let elTitle = $(`
+                    <span>
+                        ${{subdirs[index]}}
+                        <img src="${{Potree.resourcePath}}/icons/goto.svg" name="action_goto_page" class="annotation-action-icon" style="filter:  invert(1);"/>
+                    </span>
+                `);
+                elTitle.find("img[name=action_goto_page]").click((event) => {{
+                    event.stopPropagation();
+                    // window.location.href = `${{page_link_dir}}/${{subdirs[index]}}.html`;
+                    window.open(`${{page_link_dir}}/${{subdirs[index]}}.html`, '_blank');
+                }});
+                elTitle.toString = () => subdirs[index];
+                let pc_anno_pos = [pointcloud.pcoGeometry.offset.x, pointcloud.pcoGeometry.offset.y, pointcloud.pcoGeometry.offset.z];
+                let pc_anno_camera_pos = [pointcloud.pcoGeometry.offset.x, pointcloud.pcoGeometry.offset.y, pointcloud.pcoGeometry.offset.z + 10.0];
+                let pc_anno = new Potree.Annotation({{
+                    position: pc_anno_pos,
+                    title: elTitle,
+                    cameraPosition: pc_anno_camera_pos,
+                    cameraTarget: pc_anno_pos,
+                }});
+                viewer.scene.annotations.add(pc_anno);
             }});
         }});
     </script>
@@ -167,17 +185,19 @@ def auto_scan_directory(dir: str) -> List[str]:
 
 # 使用例
 if __name__ == "__main__":
-    local_data_dir = "<path to pointcloud data dir>/hoges"
+    local_data_dir = "/mnt/bigdata/00_students/aichi_ucl/potree-server-data/_data/toyotasystems/FTS_navvis_all_croped_voxel_20260116/cropped_pointcloud_notfloor/"
     subdirs = auto_scan_directory(local_data_dir)
     
-    local_page_path = "<path to html page dir>/hoges.html"
+    local_page_path = "/mnt/bigdata/00_students/aichi_ucl/potree-server-data/_page/toyotasystems/FTS_navvis_all_croped_voxel_20260116/all.html"
     description = "NAME, DATE, DEVICE"
-    data_base_dir = "/potree/_data/hoges"
-    
+    data_base_dir = "/potree/_data/toyotasystems/FTS_navvis_all_croped_voxel_20260116/cropped_pointcloud_notfloor"
+    page_link_dir = "/potree/_page/toyotasystems/FTS_navvis_all_croped_voxel_20260116/cropped_pointcloud_notfloor"
+
     generate_html(
         local_page_path=local_page_path,
         description=description,
         data_base_dir=data_base_dir,
         data_subdirs=subdirs
+        page_link_dir=page_link_dir,
     )
     print("\nDone!")

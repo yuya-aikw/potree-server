@@ -1,0 +1,104 @@
+<script src="../libs/proj4/proj4.js"></script>
+<script src="../libs/shapefile/shapefile.js"></script>
+<script src="../build/potree/potree.js"></script>
+
+<script type="module">
+import * as THREE from "../libs/three.js/build/three.module.js";
+
+window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+
+// ポイントクラウドを読み込む
+Potree.loadPointCloud("path/to/cloud.js", "PointCloud", async e => {
+    let pointcloud = e.pointcloud;
+    viewer.scene.addPointCloud(pointcloud);
+    
+    // Shapefileの座標系をポイントクラウドの座標系に変換
+    proj4.defs("WGS84", "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs");
+    proj4.defs("pointcloud", pointcloud.projection);
+    let transform = proj4("WGS84", "pointcloud");
+    
+    // Shapefileローダーを作成
+    const loader = new Potree.ShapefileLoader();
+    loader.transform = transform;
+    
+    // Shapefileを格納するグループノード
+    const shapeNode = new THREE.Object3D();
+    viewer.scene.scene.add(shapeNode);
+    
+    // 道路データを読み込む
+    const shpRoads = await loader.load("./morro_bay_shp/shape/roads.shp");
+    shapeNode.add(shpRoads.node);
+    
+    // 色を黄色に変更
+    shpRoads.node.traverse(node => {
+        if(node.material){
+            node.material.color.setRGB(1, 1, 0);  // 黄色
+        }
+    });
+    
+    // 水路データを読み込む
+    const shpWaterways = await loader.load("./morro_bay_shp/shape/waterways.shp");
+    shapeNode.add(shpWaterways.node);
+    
+    // 色を青に変更
+    shpWaterways.node.traverse(node => {
+        if(node.material){
+            node.material.color.setRGB(0.3, 0.3, 1);  // 青
+        }
+    });
+    
+    // ポイントデータを読み込む
+    const shpPoints = await loader. load("./morro_bay_shp/shape/points.shp");
+    shapeNode.add(shpPoints.node);
+    
+    // 線の太さを適切に表示するための更新処理
+    viewer.addEventListener("update", () => {
+        const size = viewer.renderer.getSize(new THREE.Vector2());
+        shpRoads.setResolution(size.width, size.height);
+        shpWaterways.setResolution(size.width, size.height);
+        shpPoints.setResolution(size.width, size.height);
+    });
+});
+</script>
+
+<!-- export class ShapefileLoader{
+    constructor(){
+        this.transform = null;  // 座標変換関数
+    }
+
+    async load(path){
+        const matLine = new LineMaterial({
+            color: 0xff0000,
+            linewidth:  3,
+            resolution: new THREE.Vector2(1000, 1000),
+            dashed: false
+        });
+
+        const features = await this.loadShapefileFeatures(path);
+        const node = new THREE.Object3D();
+        
+        for(const feature of features){
+            const fnode = this.featureToSceneNode(feature, matLine);
+            node.add(fnode);
+        }
+
+        return {
+            features: features,
+            node: node,
+            setResolution:  (x, y) => matLine.resolution. set(x, y)
+        };
+    }
+}
+
+viewer.onGUILoaded(() => {
+    let tree = $(`#jstree_scene`);
+    let parentNode = "other";
+    
+    let roadsID = tree.jstree('create_node', parentNode, { 
+        text: "Roads", 
+        icon: `${Potree.resourcePath}/icons/triangle.svg`,
+        data: shpRoads.node
+    }, "last", false, false);
+    
+    tree.jstree(shpRoads.node. visible ?  "check_node" : "uncheck_node", roadsID);
+}); -->

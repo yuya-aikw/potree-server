@@ -23,7 +23,7 @@ def generate_html(
     """
     data_path = data_path.rstrip("/")
 
-    html_content = f'''
+    html_content = '''
 <!-- copyed from https://github.com/potree/potree/blob/develop/examples/viewer.html -->
 <!-- changed ../ to /potree/ -->
 <!DOCTYPE html>
@@ -68,18 +68,13 @@ def generate_html(
     </div>
 
     <script type="module">
-
+        // create viewer
         window.viewer = new Potree.Viewer(document.getElementById("potree_render_area"));
-
         viewer.setEDLEnabled(false);
         viewer.setFOV(60);
         viewer.setPointBudget(1_000_000);
         viewer.loadSettingsFromURL();
         viewer.setBackground("skybox");
-
-        // fix description
-        viewer.setDescription("{description}");
-
         viewer.loadGUI(() => {{
             viewer.setLanguage('jp');
             $("#menu_tools").next().show();
@@ -87,30 +82,34 @@ def generate_html(
             $("#menu_clipping").next().show();
             viewer.toggleSidebar();
         }});
+        viewer.setDescription("{description}");
 
-        // カスタムスキームに変更
-        viewer.setClassifications({{
-            0: {{ visible: true, name: 'never classified', color: [0.5, 0.5, 0.5, 1.0] }},
-            1: {{ visible: true, name: 'hoge 1', color: [1.0, 0.0, 0.0, 0.5] }},
-            DEFAULT: {{ visible: false, name: 'default', color: [0.0, 0.0, 0.0, 1.0] }},
-        }});
-
-        // fix metadata.json url
-        Potree.loadPointCloud("{data_path}/metadata.json", "0", e => {{
+        // classification
+        let classifications = {{}};
+        for (let i = 64; i < 256; i++) {{
+            classifications[i] = {{
+                visible: true,
+                name: String(i),
+                color: [Math.random(),Math.random(),Math.random(),1.0], 
+            }};
+        }}
+        classifications.DEFAULT = {{visible: false,name: 'default',color: [1.0, 1.0, 1.0, 1.0]}};
+        viewer.setClassifications(classifications);
+        
+        // add point cloud
+        Potree.loadPointCloud("{data_path}/metadata.json", "pointcloud", e => {{
             let pointcloud = e.pointcloud;
             let material = pointcloud.material;
-
             material.activeAttributeName = "rgba";
             material.minSize = 1;
             material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
-
             viewer.scene.addPointCloud(pointcloud);
             viewer.fitToScreen();
         }});
     </script>
 </body>
 </html>
-'''
+'''.format(description=description, data_path=data_path)
 
     # 出力ディレクトリが存在しない場合は作成
     output_dir = Path(local_page_path).parent
@@ -124,13 +123,50 @@ def generate_html(
 
 # 使用例
 if __name__ == "__main__":
-    local_page_path = "<path to html page dir>/hoge.html"
-    description = "NAME, DATE, DEVICE"
-    data_path = "/potree/_data/hoge"
+    # local_page_path = "<path to html page dir>/hoge.html"
+    # description = "NAME, DATE, DEVICE"
+    # data_path = "/potree/_data/hoge"
     
-    generate_html(
-        local_page_path=local_page_path ,
-        description=description,
-        data_path=data_path
-    )
-    print("\nDone!")
+    # generate_html(
+    #     local_page_path=local_page_path ,
+    #     description=description,
+    #     data_path=data_path
+    # )
+    # print("\nDone!")
+    
+    # 1. local_data_dirを設定
+    local_data_dir = "/mnt/bigdata/00_students/aichi_ucl/potree-server-data/_data/toyotasystems/FTS_navvis_all_croped_voxel_20260116/cropped_pointcloud/"
+    local_page_base_dir = "/mnt/bigdata/00_students/aichi_ucl/potree-server-data/_page/toyotasystems/FTS_navvis_all_croped_voxel_20260116/cropped_pointcloud/"
+    
+    # 2. local_data_dir直下のディレクトリをすべて取得
+    data_path_obj = Path(local_data_dir)
+    if not data_path_obj.exists():
+        raise FileNotFoundError(f"Directory not found: {local_data_dir}")
+    
+    subdirs = [d for d in data_path_obj.iterdir() if d.is_dir()]
+    subdirs.sort()  # アルファベット順にソート
+    
+    print(f"Found {len(subdirs)} subdirectories in {local_data_dir}")
+    
+    # 各ディレクトリに対してHTMLを生成
+    for subdir in subdirs:
+        dir_name = subdir.name
+        print(f"\nProcessing: {dir_name}")
+        
+        # 3. local_page_path = "<path to html page dir>/[ディレクトリ名].html"
+        local_page_path = f"{local_page_base_dir}{dir_name}.html"
+        
+        # 4. data_path = "/potree/_data/[ディレクトリ名]"
+        data_path = f"/potree/_data/toyotasystems/FTS_navvis_all_croped_voxel_20260116/cropped_pointcloud/{dir_name}"
+        
+        description = f"{dir_name}"
+        
+        # 5. generate_htmlに渡して実行
+        generate_html(
+            local_page_path=local_page_path,
+            description=description,
+            data_path=data_path
+        )
+    
+    print("\nAll done!")
+    
